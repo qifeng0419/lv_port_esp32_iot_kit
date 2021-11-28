@@ -16,7 +16,7 @@ This is an ESP32 demo project showcasing LVGL v7 with support for several displa
 
 1. 递归clone本代码：
 ```
-git clone --recurse-submodules https://github.com/ZhiliangMa/lv_port_esp32.git
+git clone --recurse-submodules https://github.com/ZhiliangMa/lv_port_esp32_iot_kit.git
 ```
 
 2. 确保电脑已有 `ESP-IDF V4.2` 环境，`cd` 移动到工程目录。
@@ -53,7 +53,7 @@ idf.py flash
 
 ## Demo演示和帧率
 
-此工程自带4个Demo，可通过图形化设置项去选择运行。
+此工程可通过图形化设置项，去运行的有4个Demo。
 
 `Component config` >> `lv_examples configuration` >> `Select the demo you want to run`
 
@@ -66,6 +66,47 @@ idf.py flash
 
 - Stress test for LVGL。压力测试，帧率抖动明显。
 
+
+除这4个意外，还可手动改动代码，将 `lv_port_esp32_iot_kit\components\lv_examples\lv_examples\src` 目录下的 `lv_demo_music`、`lv_demo_printer`、`lv_ex_get_started`、`lv_ex_style`、`lv_ex_widgets` 导入运行。
+
+
+***
+
+## 优化刷屏帧率
+
+- 工程内默认配置使用IRAM，默认使用`行像素`x`40行`x`2`字节的双BUFF。运行`benchmark`跑分Demo的成绩为：
+
+40M SPI速度、IRAM开启、320x40x2字节双缓存、160MHz主频。FPS：41。OPS：75%。
+
+- 更快的刷屏方式1：将SPI的刷屏速率，由40MHz提高到80MHz。但很有可能会出现花屏，降低稳定性。（ESP32-IOT-KIT使用ST7789V+FT6236U单点电容屏组合时，以80MHz刷屏时，需将TF卡插入，会解决绝大多数的花屏问题）
+
+- 【修改SPI速率的测试结果，运行`benchmark`跑分Demo的成绩】：
+
+40M SPI速度、IRAM开启、320x40x2字节双缓存、160MHz主频。FPS：41。OPS：75%。
+
+80M SPI速度、IRAM开启、320x40x2字节双缓存、160MHz主频。FPS：52。OPS：68%。
+
+- 更快的刷屏方式1：将ESP32的运行主频，由160MHz提高到240MHz。为了降低功耗，IDF工程一般都是使用ESP32的160MHz去运行，调整为240MHz后会提高MCU的运算能力，从而提高LVGL的刷屏帧率。（menuconfig中寻找`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ`，此项可调整ESP32的默认主频）
+
+- 【修改ESP32主频的测试结果，运行`benchmark`跑分Demo的成绩】：
+
+40M SPI速度、IRAM开启、320x40x2字节双缓存、160MHz主频。FPS：41。OPS：75%。
+
+40M SPI速度、IRAM开启、320x40x2字节双缓存、240MHz主频。FPS：53。OPS：82%。
+
+80M SPI速度、IRAM开启、320x40x2字节双缓存、240MHz主频。FPS：60。OPS：78%。
+
+- 个人小结：80MHz的SPI刷屏速率不具备普适性，绝大多数的SPI屏幕能支持的速率还是40MHz。虽然80MHz可以用，而盲目的将SPI速率增大到80MHz只会增加不稳定性。从测试结果可以看出，在ESP32的主频为240MHz时，SPI速率为40MHz和80MHz带来的影响并不是特别的大，而为了稳定性，更建议使用SPI为40MHz的配置。
+
+
+***
+
+## 配套Visual Studio模拟器
+
+- 因本工程的LVGL版本为V7.9，故模拟器也应该使用V7版本的。递归clone，VS模拟器的v7版本分支：
+```
+git clone --recurse-submodules -b release/v7 https://github.com/lvgl/lv_sim_visual_studio.git
+```
 
 ***
 
